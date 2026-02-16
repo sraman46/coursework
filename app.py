@@ -9,11 +9,9 @@ import os
 
 def generate_key():
     key = Fernet.generate_key()
-    with open("secret.key", "wb") as key_file:
+    with open("my,secret.key", "wb") as key_file:
         key_file.write(key)
     messagebox.showinfo("Success", "Key generated and saved as secret.key")
-
-
 def load_key():
     if not os.path.exists("secret.key"):
         messagebox.showerror("Error", "secret.key not found. Generate key first.")
@@ -91,8 +89,7 @@ root = tk.Tk()
 root.title("File Encryption & Decryption App v1.1")
 root.geometry("420x260")
 root.resizable(False, False)
-
-label = tk.Label(root, text="File Encryption & Decryption", font=("Arial", 16, "bold"))
+label = tk.Label(root, text="File Encryption & Decryption v1.1", font=("Arial", 16, "bold"))
 label.pack(pady=20)
 
 btn_key = tk.Button(root, text="Generate Key", width=25, height=2, command=generate_key)
