@@ -88,7 +88,7 @@ def decrypt_file():
 # ==============================
 
 root = tk.Tk()
-root.title("File Encryption & Decryption App")
+root.title("File Encryption & Decryption App v1.1")
 root.geometry("420x260")
 root.resizable(False, False)
 
