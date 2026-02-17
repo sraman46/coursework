@@ -13,13 +13,11 @@ def create_key():
         key_file.write(key)
     messagebox.showinfo("Success", "Encryption key created as 'secret.key'")
 
-
 def load_key():
     if not os.path.exists("secret.key"):
         messagebox.showerror("Error", "secret.key not found. Generate key first.")
         return None
     return open("secret.key", "rb").read()
-
 
 # ==============================
 # File Encryption
@@ -48,7 +46,6 @@ def encrypt_file():
         messagebox.showinfo("Success", f"File encrypted:\n{new_path}")
     except Exception as e:
         messagebox.showerror("Error", str(e))
-
 
 # ==============================
 # File Decryption
@@ -82,16 +79,15 @@ def decrypt_file():
     except Exception:
         messagebox.showerror("Error", "Invalid key or corrupted file")
 
-
 # ==============================
 # GUI
 # ==============================
 
 root = tk.Tk()
-root.title("File Encryption & Decryption App v1.2")  # version updated
-root.geometry("420x280")  # slightly taller window
+root.title("File Encryption & Decryption App v1.2")
+root.geometry("420x320")
 root.resizable(False, False)
-root.configure(bg="#f0f4f7")  # background color added
+root.configure(bg="#f0f4f7")
 
 # Main title label
 label = tk.Label(
@@ -102,4 +98,21 @@ label = tk.Label(
 )
 label.pack(pady=15)
 
-# Subtit
+# Subtitle label
+subtitle = tk.Label(
+    root,
+    text="Securely encrypt and decrypt your files",
+    font=("Arial", 12),
+    bg="#f0f4f7"
+)
+subtitle.pack(pady=5)
+
+# Buttons
+tk.Button(root, text="Generate Key", width=25, command=create_key).pack(pady=10)
+tk.Button(root, text="Encrypt File", width=25, command=encrypt_file).pack(pady=10)
+tk.Button(root, text="Decrypt File", width=25, command=decrypt_file).pack(pady=10)
+
+# Start GUI
+root.mainloop()
+
+
