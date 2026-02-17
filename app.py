@@ -4,6 +4,11 @@ from cryptography.fernet import Fernet
 import os
 
 # ==============================
+# File Encryption & Decryption App using Tkinter and Fernet
+# Version 1.2 - minor GUI update for commit
+# ==============================
+
+# ==============================
 # Key Management
 # ==============================
 
@@ -84,17 +89,17 @@ def decrypt_file():
 # ==============================
 
 root = tk.Tk()
-root.title("File Encryption & Decryption App v1.2")
+root.title("File Encryption & Decryption App v1.2 [Updated]")  # updated for commit
 root.geometry("420x320")
 root.resizable(False, False)
-root.configure(bg="#f0f4f7")
+root.configure(bg="#e8eef3")  # slightly updated background color
 
 # Main title label
 label = tk.Label(
     root,
     text="File Encryption & Decryption v1.2",
     font=("Arial", 16, "bold"),
-    bg="#f0f4f7"
+    bg="#e8eef3"
 )
 label.pack(pady=15)
 
@@ -103,7 +108,7 @@ subtitle = tk.Label(
     root,
     text="Securely encrypt and decrypt your files",
     font=("Arial", 12),
-    bg="#f0f4f7"
+    bg="#e8eef3"
 )
 subtitle.pack(pady=5)
 
