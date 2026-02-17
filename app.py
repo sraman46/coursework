@@ -7,11 +7,13 @@ import os
 # Key Management
 # ==============================
 
-def generate_key():
+def create_key():
     key = Fernet.generate_key()
-    with open("my,secret.key", "wb") as key_file:
+    with open("secret.key", "wb") as key_file:   # fixed name
         key_file.write(key)
-    messagebox.showinfo("Success", "Key generated and saved as secret.key")
+    messagebox.showinfo("Success", "Encryption key created as 'secret.key'")  # moved inside function
+
+
 def load_key():
     if not os.path.exists("secret.key"):
         messagebox.showerror("Error", "secret.key not found. Generate key first.")
@@ -77,7 +79,7 @@ def decrypt_file():
             file.write(decrypted)
 
         messagebox.showinfo("Success", f"File decrypted:\n{new_path}")
-    except Exception as e:
+    except Exception:
         messagebox.showerror("Error", "Invalid key or corrupted file")
 
 
@@ -89,10 +91,11 @@ root = tk.Tk()
 root.title("File Encryption & Decryption App v1.1")
 root.geometry("420x260")
 root.resizable(False, False)
+
 label = tk.Label(root, text="File Encryption & Decryption v1.1", font=("Arial", 16, "bold"))
 label.pack(pady=20)
 
-btn_key = tk.Button(root, text="Generate Key", width=25, height=2, command=generate_key)
+btn_key = tk.Button(root, text="Generate Key", width=25, height=2, command=create_key)
 btn_key.pack(pady=10)
 
 btn_encrypt = tk.Button(root, text="Encrypt File", width=25, height=2, command=encrypt_file)
