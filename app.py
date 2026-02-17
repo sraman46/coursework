@@ -9,9 +9,9 @@ import os
 
 def create_key():
     key = Fernet.generate_key()
-    with open("secret.key", "wb") as key_file:   # fixed name
+    with open("secret.key", "wb") as key_file:
         key_file.write(key)
-    messagebox.showinfo("Success", "Encryption key created as 'secret.key'")  # moved inside function
+    messagebox.showinfo("Success", "Encryption key created as 'secret.key'")
 
 
 def load_key():
@@ -88,20 +88,18 @@ def decrypt_file():
 # ==============================
 
 root = tk.Tk()
-root.title("File Encryption & Decryption App v1.1")
-root.geometry("420x260")
+root.title("File Encryption & Decryption App v1.2")  # version updated
+root.geometry("420x280")  # slightly taller window
 root.resizable(False, False)
+root.configure(bg="#f0f4f7")  # background color added
 
-label = tk.Label(root, text="File Encryption & Decryption v1.1", font=("Arial", 16, "bold"))
-label.pack(pady=20)
+# Main title label
+label = tk.Label(
+    root,
+    text="File Encryption & Decryption v1.2",
+    font=("Arial", 16, "bold"),
+    bg="#f0f4f7"
+)
+label.pack(pady=15)
 
-btn_key = tk.Button(root, text="Generate Key", width=25, height=2, command=create_key)
-btn_key.pack(pady=10)
-
-btn_encrypt = tk.Button(root, text="Encrypt File", width=25, height=2, command=encrypt_file)
-btn_encrypt.pack(pady=10)
-
-btn_decrypt = tk.Button(root, text="Decrypt File", width=25, height=2, command=decrypt_file)
-btn_decrypt.pack(pady=10)
-
-root.mainloop()
+# Subtit
