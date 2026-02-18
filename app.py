@@ -5,21 +5,32 @@ import os
 
 # ==============================
 # File Encryption & Decryption App
-# Stable Version v1.5
-# Added: Custom key save location + better status handling
+# Stable Version v1.6
+# Added: File pre-selection + custom key save + UX improvements
 # ==============================
 
 root = tk.Tk()
-root.title("File Encryption & Decryption App v1.5")
-root.geometry("420x400")
+root.title("File Encryption & Decryption App v1.6")
+root.geometry("460x460")
 root.resizable(False, False)
 root.configure(bg="#e8eef3")
 
 status_text = tk.StringVar(value="Status: Ready")
+selected_file = tk.StringVar(value="No file selected")
 
 def set_status(msg):
     status_text.set(f"Status: {msg}")
     root.update_idletasks()
+
+# ==============================
+# File Selection
+# ==============================
+
+def choose_file():
+    path = filedialog.askopenfilename()
+    if path:
+        selected_file.set(path)
+        set_status("File selected")
 
 # ==============================
 # Key Management
@@ -41,7 +52,7 @@ def create_key():
     with open(save_path, "wb") as f:
         f.write(key)
 
-    messagebox.showinfo("Success", "Key file created successfully")
+    messagebox.showinfo("Success", "Key file created")
     set_status("Key generated")
 
 def load_key():
@@ -79,8 +90,9 @@ def encrypt_file():
         set_status("Missing key")
         return
 
-    path = filedialog.askopenfilename()
-    if not path:
+    path = selected_file.get()
+    if path == "No file selected":
+        messagebox.showerror("Error", "Select a file first")
         return
 
     if path.endswith(".enc"):
@@ -88,6 +100,7 @@ def encrypt_file():
         return
 
     try:
+        set_status("Encrypting...")
         f = Fernet(key)
 
         with open(path, "rb") as file:
@@ -121,13 +134,13 @@ def decrypt_file():
         set_status("Missing key")
         return
 
-    path = filedialog.askopenfilename(
-        filetypes=[("Encrypted", "*.enc"), ("All", "*.*")]
-    )
-    if not path:
+    path = selected_file.get()
+    if path == "No file selected":
+        messagebox.showerror("Error", "Select a file first")
         return
 
     try:
+        set_status("Decrypting...")
         f = Fernet(key)
 
         with open(path, "rb") as file:
@@ -155,7 +168,7 @@ def decrypt_file():
 # GUI
 # ==============================
 
-tk.Label(root, text="File Encryption & Decryption v1.5",
+tk.Label(root, text="File Encryption & Decryption v1.6",
          font=("Arial", 16, "bold"),
          bg="#e8eef3").pack(pady=15)
 
@@ -163,13 +176,20 @@ tk.Label(root, text="Secure your files with Fernet encryption",
          font=("Arial", 12),
          bg="#e8eef3").pack()
 
-tk.Button(root, text="Generate Key", width=25,
+tk.Button(root, text="Generate Key", width=28,
           command=create_key).pack(pady=8)
 
-tk.Button(root, text="Encrypt File", width=25,
+tk.Button(root, text="Select File", width=28,
+          command=choose_file).pack(pady=8)
+
+tk.Label(root, textvariable=selected_file,
+         wraplength=400,
+         bg="#e8eef3").pack(pady=5)
+
+tk.Button(root, text="Encrypt File", width=28,
           command=encrypt_file).pack(pady=8)
 
-tk.Button(root, text="Decrypt File", width=25,
+tk.Button(root, text="Decrypt File", width=28,
           command=decrypt_file).pack(pady=8)
 
 tk.Label(root, textvariable=status_text,
@@ -177,6 +197,7 @@ tk.Label(root, textvariable=status_text,
          fg="blue").pack(pady=15)
 
 root.mainloop()
+
 
 
 
