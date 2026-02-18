@@ -5,16 +5,13 @@ import os
 
 # ==============================
 # File Encryption & Decryption App
-# Stable Version v1.4 FIXED
+# Stable Version v1.5
+# Added: Custom key save location + better status handling
 # ==============================
 
-# ------------------------------
-# GUI Setup First (important)
-# ------------------------------
-
 root = tk.Tk()
-root.title("File Encryption & Decryption App v1.4")
-root.geometry("420x380")
+root.title("File Encryption & Decryption App v1.5")
+root.geometry("420x400")
 root.resizable(False, False)
 root.configure(bg="#e8eef3")
 
@@ -22,6 +19,7 @@ status_text = tk.StringVar(value="Status: Ready")
 
 def set_status(msg):
     status_text.set(f"Status: {msg}")
+    root.update_idletasks()
 
 # ==============================
 # Key Management
@@ -29,14 +27,27 @@ def set_status(msg):
 
 def create_key():
     key = Fernet.generate_key()
-    with open("secret.key", "wb") as f:
+
+    save_path = filedialog.asksaveasfilename(
+        title="Save Key File",
+        defaultextension=".key",
+        filetypes=[("Key Files", "*.key")]
+    )
+
+    if not save_path:
+        set_status("Key save cancelled")
+        return
+
+    with open(save_path, "wb") as f:
         f.write(key)
-    messagebox.showinfo("Success", "Key saved as secret.key")
+
+    messagebox.showinfo("Success", "Key file created successfully")
     set_status("Key generated")
 
 def load_key():
     if os.path.exists("secret.key"):
         with open("secret.key", "rb") as f:
+            set_status("Default key loaded")
             return f.read()
     return None
 
@@ -52,8 +63,9 @@ def load_custom_key():
             key = f.read()
         set_status("Custom key loaded")
         return key
-    except:
+    except Exception:
         messagebox.showerror("Error", "Invalid key file")
+        set_status("Key load failed")
         return None
 
 # ==============================
@@ -61,9 +73,7 @@ def load_custom_key():
 # ==============================
 
 def encrypt_file():
-    key = load_key()
-    if not key:
-        key = load_custom_key()
+    key = load_key() or load_custom_key()
     if not key:
         messagebox.showerror("Error", "No key found")
         set_status("Missing key")
@@ -73,8 +83,13 @@ def encrypt_file():
     if not path:
         return
 
+    if path.endswith(".enc"):
+        messagebox.showwarning("Warning", "File already encrypted")
+        return
+
     try:
         f = Fernet(key)
+
         with open(path, "rb") as file:
             data = file.read()
 
@@ -89,7 +104,7 @@ def encrypt_file():
             file.write(encrypted)
 
         messagebox.showinfo("Success", "File encrypted")
-        set_status("Encrypted")
+        set_status("Encrypted successfully")
 
     except Exception as e:
         messagebox.showerror("Error", str(e))
@@ -100,9 +115,7 @@ def encrypt_file():
 # ==============================
 
 def decrypt_file():
-    key = load_key()
-    if not key:
-        key = load_custom_key()
+    key = load_key() or load_custom_key()
     if not key:
         messagebox.showerror("Error", "No key found")
         set_status("Missing key")
@@ -116,6 +129,7 @@ def decrypt_file():
 
     try:
         f = Fernet(key)
+
         with open(path, "rb") as file:
             data = file.read()
 
@@ -131,17 +145,17 @@ def decrypt_file():
             file.write(decrypted)
 
         messagebox.showinfo("Success", "File decrypted")
-        set_status("Decrypted")
+        set_status("Decrypted successfully")
 
-    except:
+    except Exception:
         messagebox.showerror("Error", "Wrong key or corrupted file")
         set_status("Decrypt failed")
 
 # ==============================
-# GUI Widgets
+# GUI
 # ==============================
 
-tk.Label(root, text="File Encryption & Decryption v1.4",
+tk.Label(root, text="File Encryption & Decryption v1.5",
          font=("Arial", 16, "bold"),
          bg="#e8eef3").pack(pady=15)
 
@@ -163,6 +177,7 @@ tk.Label(root, textvariable=status_text,
          fg="blue").pack(pady=15)
 
 root.mainloop()
+
 
 
 
