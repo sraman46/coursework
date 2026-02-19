@@ -4,12 +4,13 @@ from cryptography.fernet import Fernet
 import os
 
 # ==============================
-# File Encryption & Decryption App v1.9
+# File Encryption & Decryption App v1.10
 # Features: overwrite toggle + file type + clear selection + output folder
+# Added: auto-append _new if file exists
 # ==============================
 
 root = tk.Tk()
-root.title("File Encryption & Decryption App v1.9")
+root.title("File Encryption & Decryption App v1.10")
 root.geometry("500x600")
 root.resizable(False, False)
 root.configure(bg="#e8eef3")
@@ -102,9 +103,10 @@ def encrypt_file():
     filename = os.path.basename(path)
     new_path = os.path.join(folder, filename + ".enc")
 
+    # Auto-append _new if file exists and overwrite is disabled
     if os.path.exists(new_path) and not overwrite_var.get():
-        messagebox.showwarning("Warning", "Encrypted file exists (overwrite disabled)")
-        return
+        base, ext = os.path.splitext(new_path)
+        new_path = base + "_new" + ext
 
     try:
         set_status("Encrypting...")
@@ -138,9 +140,10 @@ def decrypt_file():
     filename = os.path.basename(path)
     new_path = os.path.join(folder, filename[:-4] if filename.endswith(".enc") else filename + ".dec")
 
+    # Auto-append _new if file exists and overwrite is disabled
     if os.path.exists(new_path) and not overwrite_var.get():
-        messagebox.showwarning("Warning", "Output file exists (overwrite disabled)")
-        return
+        base, ext = os.path.splitext(new_path)
+        new_path = base + "_new" + ext
 
     try:
         set_status("Decrypting...")
@@ -161,7 +164,7 @@ def decrypt_file():
 # GUI
 # ==============================
 
-tk.Label(root, text="File Encryption & Decryption v1.9",
+tk.Label(root, text="File Encryption & Decryption v1.10",
          font=("Arial", 16, "bold"), bg="#e8eef3").pack(pady=12)
 
 tk.Button(root, text="Generate Key", width=32, command=create_key).pack(pady=5)
@@ -185,6 +188,7 @@ tk.Button(root, text="Decrypt File", width=32, command=decrypt_file).pack(pady=6
 tk.Label(root, textvariable=status_text, bg="#e8eef3", fg="blue").pack(pady=12)
 
 root.mainloop()
+
 
 
 
