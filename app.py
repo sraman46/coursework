@@ -5,19 +5,23 @@ import os
 
 # ==============================
 # File Encryption & Decryption App
-# Stable Version v1.7
-# Added: File size display + action confirmation dialogs
+# Version v1.8 — overwrite toggle + file type + clear button
 # ==============================
 
 root = tk.Tk()
-root.title("File Encryption & Decryption App v1.7")
-root.geometry("460x500")
+root.title("File Encryption & Decryption App v1.8")
+root.geometry("480x560")
 root.resizable(False, False)
 root.configure(bg="#e8eef3")
 
 status_text = tk.StringVar(value="Status: Ready")
 selected_file = tk.StringVar(value="No file selected")
 file_info = tk.StringVar(value="")
+file_type = tk.StringVar(value="")
+key_path_var = tk.StringVar(value="No key selected")
+overwrite_var = tk.BooleanVar(value=False)
+
+current_key = None
 
 def set_status(msg):
     status_text.set(f"Status: {msg}")
@@ -35,67 +39,66 @@ def choose_file():
         size = os.path.getsize(path) / 1024
         file_info.set(f"Size: {size:.2f} KB")
 
+        ext = os.path.splitext(path)[1] or "No extension"
+        file_type.set(f"Type: {ext}")
+
         set_status("File selected")
+
+def clear_file():
+    selected_file.set("No file selected")
+    file_info.set("")
+    file_type.set("")
+    set_status("Selection cleared")
 
 # ==============================
 # Key Management
 # ==============================
 
 def create_key():
+    global current_key
+
     key = Fernet.generate_key()
 
     save_path = filedialog.asksaveasfilename(
-        title="Save Key File",
         defaultextension=".key",
         filetypes=[("Key Files", "*.key")]
     )
-
     if not save_path:
-        set_status("Key save cancelled")
         return
 
     with open(save_path, "wb") as f:
         f.write(key)
 
-    messagebox.showinfo("Success", "Key file created")
+    current_key = key
+    key_path_var.set(save_path)
+
+    messagebox.showinfo("Success", "Key created and loaded")
     set_status("Key generated")
 
-def load_key():
-    if os.path.exists("secret.key"):
-        with open("secret.key", "rb") as f:
-            set_status("Default key loaded")
-            return f.read()
-    return None
+def load_key_file():
+    global current_key
 
-def load_custom_key():
     path = filedialog.askopenfilename(
-        title="Select key file",
-        filetypes=[("Key Files", "*.key"), ("All Files", "*.*")]
+        filetypes=[("Key Files", "*.key")]
     )
     if not path:
-        return None
+        return
+
     try:
         with open(path, "rb") as f:
-            key = f.read()
-        set_status("Custom key loaded")
-        return key
-    except Exception:
+            current_key = f.read()
+        key_path_var.set(path)
+        set_status("Key loaded")
+    except:
         messagebox.showerror("Error", "Invalid key file")
-        set_status("Key load failed")
-        return None
 
 # ==============================
 # Encryption
 # ==============================
 
 def encrypt_file():
-    if not messagebox.askyesno("Confirm", "Encrypt selected file?"):
-        return
-
-    key = load_key() or load_custom_key()
-    if not key:
-        messagebox.showerror("Error", "No key found")
-        set_status("Missing key")
+    if not current_key:
+        messagebox.showerror("Error", "Load or create a key first")
         return
 
     path = selected_file.get()
@@ -103,29 +106,26 @@ def encrypt_file():
         messagebox.showerror("Error", "Select a file first")
         return
 
-    if path.endswith(".enc"):
-        messagebox.showwarning("Warning", "File already encrypted")
+    new_path = path + ".enc"
+
+    if os.path.exists(new_path) and not overwrite_var.get():
+        messagebox.showwarning("Warning", "Encrypted file exists (overwrite disabled)")
         return
 
     try:
         set_status("Encrypting...")
-        f = Fernet(key)
+        f = Fernet(current_key)
 
         with open(path, "rb") as file:
             data = file.read()
 
         encrypted = f.encrypt(data)
-        new_path = path + ".enc"
-
-        if os.path.exists(new_path):
-            messagebox.showwarning("Warning", "Encrypted file exists")
-            return
 
         with open(new_path, "wb") as file:
             file.write(encrypted)
 
-        messagebox.showinfo("Success", "File encrypted")
-        set_status("Encrypted successfully")
+        messagebox.showinfo("Success", "Encrypted")
+        set_status("Encryption complete")
 
     except Exception as e:
         messagebox.showerror("Error", str(e))
@@ -136,13 +136,8 @@ def encrypt_file():
 # ==============================
 
 def decrypt_file():
-    if not messagebox.askyesno("Confirm", "Decrypt selected file?"):
-        return
-
-    key = load_key() or load_custom_key()
-    if not key:
-        messagebox.showerror("Error", "No key found")
-        set_status("Missing key")
+    if not current_key:
+        messagebox.showerror("Error", "Load or create a key first")
         return
 
     path = selected_file.get()
@@ -150,26 +145,26 @@ def decrypt_file():
         messagebox.showerror("Error", "Select a file first")
         return
 
+    new_path = path[:-4] if path.endswith(".enc") else path + ".dec"
+
+    if os.path.exists(new_path) and not overwrite_var.get():
+        messagebox.showwarning("Warning", "Output exists (overwrite disabled)")
+        return
+
     try:
         set_status("Decrypting...")
-        f = Fernet(key)
+        f = Fernet(current_key)
 
         with open(path, "rb") as file:
             data = file.read()
 
         decrypted = f.decrypt(data)
 
-        new_path = path[:-4] if path.endswith(".enc") else path + ".dec"
-
-        if os.path.exists(new_path):
-            messagebox.showwarning("Warning", "Output file exists")
-            return
-
         with open(new_path, "wb") as file:
             file.write(decrypted)
 
-        messagebox.showinfo("Success", "File decrypted")
-        set_status("Decrypted successfully")
+        messagebox.showinfo("Success", "Decrypted")
+        set_status("Decryption complete")
 
     except Exception:
         messagebox.showerror("Error", "Wrong key or corrupted file")
@@ -179,38 +174,47 @@ def decrypt_file():
 # GUI
 # ==============================
 
-tk.Label(root, text="File Encryption & Decryption v1.7",
+tk.Label(root, text="File Encryption & Decryption v1.8",
          font=("Arial", 16, "bold"),
-         bg="#e8eef3").pack(pady=15)
+         bg="#e8eef3").pack(pady=12)
 
-tk.Label(root, text="Secure your files with Fernet encryption",
-         font=("Arial", 12),
-         bg="#e8eef3").pack()
+tk.Button(root, text="Generate Key", width=32,
+          command=create_key).pack(pady=5)
 
-tk.Button(root, text="Generate Key", width=28,
-          command=create_key).pack(pady=8)
+tk.Button(root, text="Load Key File", width=32,
+          command=load_key_file).pack(pady=5)
 
-tk.Button(root, text="Select File", width=28,
-          command=choose_file).pack(pady=8)
+tk.Label(root, textvariable=key_path_var,
+         wraplength=440, bg="#e8eef3").pack(pady=4)
+
+tk.Button(root, text="Select File", width=32,
+          command=choose_file).pack(pady=5)
+
+tk.Button(root, text="Clear Selection", width=32,
+          command=clear_file).pack(pady=3)
 
 tk.Label(root, textvariable=selected_file,
-         wraplength=400,
-         bg="#e8eef3").pack(pady=5)
+         wraplength=440, bg="#e8eef3").pack()
 
-tk.Label(root, textvariable=file_info,
-         bg="#e8eef3").pack()
+tk.Label(root, textvariable=file_info, bg="#e8eef3").pack()
+tk.Label(root, textvariable=file_type, bg="#e8eef3").pack()
 
-tk.Button(root, text="Encrypt File", width=28,
-          command=encrypt_file).pack(pady=8)
+tk.Checkbutton(root,
+               text="Allow overwrite output file",
+               variable=overwrite_var,
+               bg="#e8eef3").pack(pady=6)
 
-tk.Button(root, text="Decrypt File", width=28,
-          command=decrypt_file).pack(pady=8)
+tk.Button(root, text="Encrypt File", width=32,
+          command=encrypt_file).pack(pady=6)
+
+tk.Button(root, text="Decrypt File", width=32,
+          command=decrypt_file).pack(pady=6)
 
 tk.Label(root, textvariable=status_text,
-         bg="#e8eef3",
-         fg="blue").pack(pady=15)
+         bg="#e8eef3", fg="blue").pack(pady=12)
 
 root.mainloop()
+
 
 
 
