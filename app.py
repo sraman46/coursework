@@ -5,18 +5,19 @@ import os
 
 # ==============================
 # File Encryption & Decryption App
-# Stable Version v1.6
-# Added: File pre-selection + custom key save + UX improvements
+# Stable Version v1.7
+# Added: File size display + action confirmation dialogs
 # ==============================
 
 root = tk.Tk()
-root.title("File Encryption & Decryption App v1.6")
-root.geometry("460x460")
+root.title("File Encryption & Decryption App v1.7")
+root.geometry("460x500")
 root.resizable(False, False)
 root.configure(bg="#e8eef3")
 
 status_text = tk.StringVar(value="Status: Ready")
 selected_file = tk.StringVar(value="No file selected")
+file_info = tk.StringVar(value="")
 
 def set_status(msg):
     status_text.set(f"Status: {msg}")
@@ -30,6 +31,10 @@ def choose_file():
     path = filedialog.askopenfilename()
     if path:
         selected_file.set(path)
+
+        size = os.path.getsize(path) / 1024
+        file_info.set(f"Size: {size:.2f} KB")
+
         set_status("File selected")
 
 # ==============================
@@ -84,6 +89,9 @@ def load_custom_key():
 # ==============================
 
 def encrypt_file():
+    if not messagebox.askyesno("Confirm", "Encrypt selected file?"):
+        return
+
     key = load_key() or load_custom_key()
     if not key:
         messagebox.showerror("Error", "No key found")
@@ -128,6 +136,9 @@ def encrypt_file():
 # ==============================
 
 def decrypt_file():
+    if not messagebox.askyesno("Confirm", "Decrypt selected file?"):
+        return
+
     key = load_key() or load_custom_key()
     if not key:
         messagebox.showerror("Error", "No key found")
@@ -168,7 +179,7 @@ def decrypt_file():
 # GUI
 # ==============================
 
-tk.Label(root, text="File Encryption & Decryption v1.6",
+tk.Label(root, text="File Encryption & Decryption v1.7",
          font=("Arial", 16, "bold"),
          bg="#e8eef3").pack(pady=15)
 
@@ -186,6 +197,9 @@ tk.Label(root, textvariable=selected_file,
          wraplength=400,
          bg="#e8eef3").pack(pady=5)
 
+tk.Label(root, textvariable=file_info,
+         bg="#e8eef3").pack()
+
 tk.Button(root, text="Encrypt File", width=28,
           command=encrypt_file).pack(pady=8)
 
@@ -197,6 +211,7 @@ tk.Label(root, textvariable=status_text,
          fg="blue").pack(pady=15)
 
 root.mainloop()
+
 
 
 
