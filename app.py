@@ -1,17 +1,7 @@
 """
-File Encryption & Decryption App
-Version: 1.12
-Author: Your Name
+Simple File Encryption & Decryption App
+Version: 1.0 (Coursework)
 Requires: cryptography
-Install: pip install cryptography
-
-Features:
-- Fernet encryption/decryption
-- Smart file size display
-- Key status color indicator
-- Operation counter
-- Output folder selection
-- Overwrite toggle
 """
 
 import tkinter as tk
@@ -19,274 +9,121 @@ from tkinter import filedialog, messagebox
 from cryptography.fernet import Fernet, InvalidToken
 import os
 
-APP_VERSION = "1.12"
-
-# ==============================
-# Root Window
-# ==============================
+# ------------------------
+# Window
+# ------------------------
 
 root = tk.Tk()
-root.title(f"File Encryption & Decryption App v{APP_VERSION}")
-root.geometry("500x620")
-root.resizable(False, False)
-root.configure(bg="#e8eef3")
+root.title("File Encryption App")
+root.geometry("420x360")
 
-# ==============================
-# Variables
-# ==============================
-
-status_text = tk.StringVar(value="Status: Ready")
-selected_file = tk.StringVar(value="No file selected")
-file_info = tk.StringVar(value="")
-file_type = tk.StringVar(value="")
-key_path_var = tk.StringVar(value="No key selected")
-output_folder = tk.StringVar(value="No folder selected")
-overwrite_var = tk.BooleanVar(value=False)
-op_count_var = tk.StringVar(value="Operations: 0")
-
+selected_file = ""
 current_key = None
-operation_count = 0
+overwrite = tk.BooleanVar()
 
+# ------------------------
+# Key Functions
+# ------------------------
 
-# ==============================
-# Helpers
-# ==============================
-
-def set_status(msg):
-    status_text.set(f"Status: {msg}")
-    root.update_idletasks()
-
-
-def inc_ops():
-    global operation_count
-    operation_count += 1
-    op_count_var.set(f"Operations: {operation_count}")
-
-
-# ==============================
-# File Selection
-# ==============================
-
-def choose_file():
-    path = filedialog.askopenfilename()
-    if not path:
-        return
-
-    selected_file.set(path)
-
-    size_kb = os.path.getsize(path) / 1024
-    file_info.set(f"Size: {size_kb/1024:.2f} MB" if size_kb > 1024 else f"Size: {size_kb:.2f} KB")
-
-    ext = os.path.splitext(path)[1] or "No extension"
-    file_type.set(f"Type: {ext}")
-
-    set_status("File selected")
-
-
-def clear_file():
-    selected_file.set("No file selected")
-    file_info.set("")
-    file_type.set("")
-    set_status("Selection cleared")
-
-
-def choose_folder():
-    path = filedialog.askdirectory()
-    if path:
-        output_folder.set(path)
-        set_status("Output folder selected")
-
-
-# ==============================
-# Key Management
-# ==============================
-
-def create_key():
+def generate_key():
     global current_key
-
     key = Fernet.generate_key()
-
-    save_path = filedialog.asksaveasfilename(
-        defaultextension=".key",
-        filetypes=[("Key Files", "*.key")]
-    )
-
-    if not save_path:
-        return
-
-    try:
-        with open(save_path, "wb") as f:
+    path = filedialog.asksaveasfilename(defaultextension=".key")
+    if path:
+        with open(path, "wb") as f:
             f.write(key)
-
         current_key = key
-        key_path_var.set(save_path)
-        key_label.config(fg="green")
-
-        messagebox.showinfo("Success", "Key created and loaded")
-        set_status("Key generated")
-
-    except Exception as e:
-        messagebox.showerror("Error", str(e))
-        key_label.config(fg="red")
+        status.set("Key generated")
 
 
-def load_key_file():
+def load_key():
     global current_key
-
-    path = filedialog.askopenfilename(filetypes=[("Key Files", "*.key")])
-    if not path:
-        return
-
-    try:
+    path = filedialog.askopenfilename(filetypes=[("Key Files","*.key")])
+    if path:
         with open(path, "rb") as f:
             current_key = f.read()
+        status.set("Key loaded")
 
-        key_path_var.set(path)
-        key_label.config(fg="green")
-        set_status("Key loaded")
+# ------------------------
+# File Select
+# ------------------------
 
-    except Exception as e:
-        key_label.config(fg="red")
-        messagebox.showerror("Error", f"Invalid key file\n{e}")
+def choose_file():
+    global selected_file
+    selected_file = filedialog.askopenfilename()
+    file_label.set(selected_file if selected_file else "No file selected")
 
+# ------------------------
+# Encrypt
+# ------------------------
 
-# ==============================
-# Encryption
-# ==============================
-
-def encrypt_file():
-    if not current_key:
-        messagebox.showerror("Error", "Load or create a key first")
+def encrypt():
+    if not current_key or not selected_file:
+        messagebox.showerror("Error", "Select file and key first")
         return
 
-    path = selected_file.get()
-    if path == "No file selected":
-        messagebox.showerror("Error", "Select a file first")
+    f = Fernet(current_key)
+
+    with open(selected_file, "rb") as file:
+        data = file.read()
+
+    new_path = selected_file + ".enc"
+    if os.path.exists(new_path) and not overwrite.get():
+        new_path = selected_file + "_new.enc"
+
+    with open(new_path, "wb") as file:
+        file.write(f.encrypt(data))
+
+    status.set("Encrypted")
+
+# ------------------------
+# Decrypt
+# ------------------------
+
+def decrypt():
+    if not current_key or not selected_file:
+        messagebox.showerror("Error", "Select file and key first")
         return
 
-    folder = output_folder.get() if output_folder.get() != "No folder selected" else os.path.dirname(path)
-    filename = os.path.basename(path)
-    new_path = os.path.join(folder, filename + ".enc")
-
-    if os.path.exists(new_path) and not overwrite_var.get():
-        base, ext = os.path.splitext(new_path)
-        new_path = base + "_new" + ext
+    f = Fernet(current_key)
 
     try:
-        set_status("Encrypting...")
-        f = Fernet(current_key)
+        with open(selected_file, "rb") as file:
+            data = file.read()
 
-        with open(path, "rb") as file:
-            encrypted = f.encrypt(file.read())
-
-        os.makedirs(folder, exist_ok=True)
-
-        with open(new_path, "wb") as file:
-            file.write(encrypted)
-
-        inc_ops()
-        messagebox.showinfo("Success", f"Encrypted:\n{new_path}")
-        set_status("Encryption complete")
-
-    except Exception as e:
-        messagebox.showerror("Error", str(e))
-        set_status("Encrypt failed")
-
-
-# ==============================
-# Decryption
-# ==============================
-
-def decrypt_file():
-    if not current_key:
-        messagebox.showerror("Error", "Load or create a key first")
-        return
-
-    path = selected_file.get()
-    if path == "No file selected":
-        messagebox.showerror("Error", "Select a file first")
-        return
-
-    folder = output_folder.get() if output_folder.get() != "No folder selected" else os.path.dirname(path)
-    filename = os.path.basename(path)
-
-    new_name = filename[:-4] if filename.endswith(".enc") else filename + ".dec"
-    new_path = os.path.join(folder, new_name)
-
-    if os.path.exists(new_path) and not overwrite_var.get():
-        base, ext = os.path.splitext(new_path)
-        new_path = base + "_new" + ext
-
-    try:
-        set_status("Decrypting...")
-        f = Fernet(current_key)
-
-        with open(path, "rb") as file:
-            decrypted = f.decrypt(file.read())
-
-        os.makedirs(folder, exist_ok=True)
+        new_path = selected_file.replace(".enc","") + ".dec"
+        if os.path.exists(new_path) and not overwrite.get():
+            new_path = new_path.replace(".dec","_new.dec")
 
         with open(new_path, "wb") as file:
-            file.write(decrypted)
+            file.write(f.decrypt(data))
 
-        inc_ops()
-        messagebox.showinfo("Success", f"Decrypted:\n{new_path}")
-        set_status("Decryption complete")
+        status.set("Decrypted")
 
     except InvalidToken:
-        messagebox.showerror("Error", "Wrong key or corrupted file")
-        set_status("Decrypt failed")
+        messagebox.showerror("Error","Wrong key or file")
 
-    except Exception as e:
-        messagebox.showerror("Error", str(e))
-        set_status("Decrypt failed")
+# ------------------------
+# UI
+# ------------------------
 
+tk.Label(root, text="File Encryption & Decryption",
+         font=("Arial",14,"bold")).pack(pady=10)
 
-# ==============================
-# GUI
-# ==============================
+tk.Button(root, text="Generate Key", width=25, command=generate_key).pack(pady=4)
+tk.Button(root, text="Load Key", width=25, command=load_key).pack(pady=4)
 
-tk.Label(root, text=f"File Encryption & Decryption v{APP_VERSION}",
-         font=("Arial", 16, "bold"),
-         bg="#e8eef3").pack(pady=12)
+tk.Button(root, text="Select File", width=25, command=choose_file).pack(pady=6)
 
-tk.Button(root, text="Generate Key", width=32, command=create_key).pack(pady=5)
-tk.Button(root, text="Load Key File", width=32, command=load_key_file).pack(pady=5)
+file_label = tk.StringVar(value="No file selected")
+tk.Label(root, textvariable=file_label, wraplength=380).pack()
 
-key_label = tk.Label(root, textvariable=key_path_var,
-                     wraplength=440, bg="#e8eef3", fg="red")
-key_label.pack(pady=4)
+tk.Checkbutton(root, text="Overwrite output", variable=overwrite).pack(pady=6)
 
-tk.Button(root, text="Select File", width=32, command=choose_file).pack(pady=5)
-tk.Button(root, text="Clear Selection", width=32, command=clear_file).pack(pady=3)
+tk.Button(root, text="Encrypt", width=25, command=encrypt).pack(pady=5)
+tk.Button(root, text="Decrypt", width=25, command=decrypt).pack(pady=5)
 
-tk.Label(root, textvariable=selected_file, wraplength=440, bg="#e8eef3").pack()
-tk.Label(root, textvariable=file_info, bg="#e8eef3").pack()
-tk.Label(root, textvariable=file_type, bg="#e8eef3").pack()
+status = tk.StringVar(value="Ready")
+tk.Label(root, textvariable=status).pack(pady=10)
 
-tk.Button(root, text="Select Output Folder", width=32, command=choose_folder).pack(pady=5)
-tk.Label(root, textvariable=output_folder, wraplength=440, bg="#e8eef3").pack(pady=4)
-
-tk.Checkbutton(root, text="Allow overwrite output file",
-               variable=overwrite_var, bg="#e8eef3").pack(pady=6)
-
-tk.Button(root, text="Encrypt File", width=32, command=encrypt_file).pack(pady=6)
-tk.Button(root, text="Decrypt File", width=32, command=decrypt_file).pack(pady=6)
-
-tk.Label(root, textvariable=op_count_var, bg="#e8eef3").pack()
-tk.Label(root, textvariable=status_text, bg="#e8eef3", fg="blue").pack(pady=12)
-
-
-if __name__ == "__main__":
-    root.mainloop()
-
-
-
-
-
-
-
-
-
-
-
+root.mainloop()
