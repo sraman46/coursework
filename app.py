@@ -71,7 +71,7 @@ def choose_file():
     global selected_file
     path = filedialog.askopenfilename()
     if path:
-        selected_file = path
+        selected_file = path 
         file_label.set(os.path.basename(path))
         update_status("File selected")
 
